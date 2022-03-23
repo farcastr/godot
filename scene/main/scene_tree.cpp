@@ -199,7 +199,29 @@ void SceneTree::_update_group_order(Group &g, bool p_use_priority) {
 
 	Node **nodes = g.nodes.ptrw();
 	int node_count = g.nodes.size();
-
+	Map <int, Node*> before;
+	// print before sort
+	bool print_debug = true;
+	if (print_debug)
+	{
+		if (g.nodes[0]->get_name() == "Node2D" || g.nodes[0]->get_name() == "Node2D2" || g.nodes[0]->get_name() == "Node2D3" || g.nodes[0]->get_name() == "Node2D4" || g.nodes[0]->get_name() == "DBG") {
+			print_line(vformat("_update_group_order *** PRE-SORT ***, name: %s, size: %s, priority: %s", g.nodes[0]->get_name(), node_count, p_use_priority));
+			for (int i = 0; i < node_count; i++) {
+				before.insert(i, g.nodes[i]);
+				for (Node* n = g.nodes[i]; n; n) {
+					if (n == g.nodes[i])
+						print_line(vformat("%s\t%s", i, n->get_name()));
+					else
+						print_line(vformat("\t%s", n->get_name()));
+					if (n->data.children.size() != 0)
+						n = n->get_child(0);
+					else {
+						break;
+					}
+				}
+			}
+		}
+	}
 	if (p_use_priority) {
 		SortArray<Node *, Node::ComparatorWithPriority> node_sort;
 		node_sort.sort(nodes, node_count);
@@ -208,6 +230,27 @@ void SceneTree::_update_group_order(Group &g, bool p_use_priority) {
 		node_sort.sort(nodes, node_count);
 	}
 	g.changed = false;
+	// print after sort
+	if (print_debug) {
+		if (g.nodes[0]->get_name() == "Node2D" || g.nodes[0]->get_name() == "Node2D2" || g.nodes[0]->get_name() == "Node2D3" || g.nodes[0]->get_name() == "Node2D4" || g.nodes[0]->get_name() == "DBG") {
+			print_line(vformat("_update_group_order *** POST-SORT ***, name: %s, size: %s, priority: %s", g.nodes[0]->get_name(), node_count, p_use_priority));
+			for (int i = 0; i < node_count; i++) {
+				if (g.nodes[i] != before[i]) {
+					for (Node* n = g.nodes[i]; n; n) {
+						if (n == g.nodes[i])
+							print_line(vformat("%s\t%s", i, n->get_name()));
+						else
+							print_line(vformat("\t%s", n->get_name()));
+						if (n->data.children.size() != 0)
+							n = n->get_child(0);
+						else {
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 void SceneTree::call_group_flagsp(uint32_t p_call_flags, const StringName &p_group, const StringName &p_function, const Variant **p_args, int p_argcount) {
@@ -978,7 +1021,7 @@ Node *SceneTree::get_first_node_in_group(const StringName &p_group) {
 	if (!E) {
 		return nullptr; //no group
 	}
-
+	print_line(vformat("get_first_node_in_group: %s", E->get().nodes[0]));
 	_update_group_order(E->get()); //update order just in case
 
 	if (E->get().nodes.size() == 0) {

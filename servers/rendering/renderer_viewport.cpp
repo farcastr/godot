@@ -244,7 +244,7 @@ void RendererViewport::_draw_viewport(Viewport *p_viewport) {
 
 		if (p_viewport->sdf_active) {
 			//process SDF
-
+			print_line("p_viewport->sdf_active = true");
 			Rect2 sdf_rect = RSG::storage->render_target_get_sdf_rect(p_viewport->render_target);
 
 			RendererCanvasRender::LightOccluderInstance *occluders = nullptr;
@@ -352,7 +352,7 @@ void RendererViewport::_draw_viewport(Viewport *p_viewport) {
 
 		if (lights_with_shadow) {
 			//update shadows if any
-
+			print_line("lights_with_shadow = true");
 			RendererCanvasRender::LightOccluderInstance *occluders = nullptr;
 
 			RENDER_TIMESTAMP("> Render PointLight2D Shadows");
@@ -389,6 +389,7 @@ void RendererViewport::_draw_viewport(Viewport *p_viewport) {
 
 		if (directional_lights_with_shadow) {
 			//update shadows if any
+			print_line("directional_lights_with_shadow = true");
 			RendererCanvasRender::Light *light = directional_lights_with_shadow;
 			while (light) {
 				Vector2 light_dir = -light->xform_cache.elements[1].normalized(); // Y is light direction
@@ -1012,9 +1013,19 @@ void RendererViewport::viewport_set_canvas_stacking(RID p_viewport, RID p_canvas
 	Viewport *viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_COND(!viewport);
 
+	print_line(vformat("Canvas: %s,\tLayer set from %s to %s\n\t\t\t\tSublayer set from %s to %s", p_canvas.get_id(), viewport->canvas_map[p_canvas].layer, p_layer, viewport->canvas_map[p_canvas].sublayer, p_sublayer));
+	int stackingfrom = (((int64_t)ABS(viewport->canvas_map[p_canvas].layer)) << 32) + viewport->canvas_map[p_canvas].sublayer;
+	int stackingto = (((int64_t)ABS(p_layer)) << 32) + p_sublayer;
+	print_line(vformat("Stacking FROM: %s \tTO: %s", stackingfrom, stackingto));
 	ERR_FAIL_COND(!viewport->canvas_map.has(p_canvas));
 	viewport->canvas_map[p_canvas].layer = p_layer;
 	viewport->canvas_map[p_canvas].sublayer = p_sublayer;
+
+	/*print_line("canvas_map --->");
+	for (KeyValue<RID, Viewport::CanvasData>& E : viewport->canvas_map) {
+		print_line(vformat("\t%s", E.key.get_id()));
+	}
+	print_line("<--- canvas_map");*/
 }
 
 void RendererViewport::viewport_set_shadow_atlas_size(RID p_viewport, int p_size, bool p_16_bits) {

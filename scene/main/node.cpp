@@ -328,7 +328,7 @@ void Node::move_child(Node *p_child, int p_pos) {
 
 void Node::_move_child(Node *p_child, int p_pos, bool p_ignore_end) {
 	ERR_FAIL_COND_MSG(data.blocked > 0, "Parent node is busy setting up children, move_child() failed. Consider using call_deferred(\"move_child\") instead (or \"popup\" if this is from a popup).");
-
+	
 	// Specifying one place beyond the end
 	// means the same as moving to the last position
 	if (!p_ignore_end) { // p_ignore_end is a little hack to make back internal children work properly.
@@ -373,6 +373,7 @@ void Node::_move_child(Node *p_child, int p_pos, bool p_ignore_end) {
 	}
 	for (const KeyValue<StringName, GroupData> &E : p_child->data.grouped) {
 		if (E.value.group) {
+			print_line(vformat("First node in group: %s", E.value.group->nodes[0]));
 			E.value.group->changed = true;
 		}
 	}
@@ -1408,10 +1409,17 @@ bool Node::is_greater_than(const Node *p_node) const {
 #endif
 
 	const Node *n = this;
+	Map <int, int> idxthis, idxthat;
 
 	int idx = data.depth - 1;
 	while (n) {
 		ERR_FAIL_INDEX_V(idx, data.depth, false);
+		if (n) {
+			if (n->get_name() == "Node2D" || n->get_name() == "Node2D2" || n->get_name() == "Node2D3" || n->get_name() == "Node2D4" || n->get_name() == "DBG" || n->get_name() == "CanvasLayer" || n->get_name() == "CanvasLayer2" || n->get_name() == "icon") {
+				idxthis.insert(idx, n->data.pos);
+				print_line(vformat("this node: %s, pos: %s, depth: %s", n->get_name(), n->data.pos, n->data.depth));
+			}
+		}
 		this_stack[idx--] = n->data.pos;
 		n = n->data.parent;
 	}
@@ -1420,6 +1428,12 @@ bool Node::is_greater_than(const Node *p_node) const {
 	idx = p_node->data.depth - 1;
 	while (n) {
 		ERR_FAIL_INDEX_V(idx, p_node->data.depth, false);
+		if (n) {
+			if (n->get_name() == "Node2D" || n->get_name() == "Node2D2" || n->get_name() == "Node2D3" || n->get_name() == "Node2D4" || n->get_name() == "DBG" || n->get_name() == "CanvasLayer" || n->get_name() == "icon") {
+				idxthat.insert(idx, n->data.pos);
+				print_line(vformat("THAT node: %s, pos: %s, depth: %s", n->get_name(), n->data.pos, n->data.depth));
+			}
+		}
 		that_stack[idx--] = n->data.pos;
 
 		n = n->data.parent;
@@ -1435,12 +1449,27 @@ bool Node::is_greater_than(const Node *p_node) const {
 
 		if (this_idx > that_idx) {
 			res = true;
+			if (idxthis.has(idx) && idxthat.has(idx)) {
+				print_line(vformat("true: >"));
+				print_line(vformat("\tthis: (idx: %s, pos: %s)", idx, idxthis[idx]));
+				print_line(vformat("\tthat: (idx: %s, pos: %s)", idx, idxthat[idx]));
+			}
 			break;
 		} else if (this_idx < that_idx) {
 			res = false;
+			if (idxthis.has(idx) && idxthat.has(idx)) {
+				print_line(vformat("false: <"));
+				print_line(vformat("\tthis: (idx: %s, pos: %s)", idx, idxthis[idx]));
+				print_line(vformat("\tthat: (idx: %s, pos: %s)", idx, idxthat[idx]));
+			}
 			break;
 		} else if (this_idx == -2) {
 			res = false; // equal
+			if (idxthis.has(this_idx) && idxthat.has(that_idx)) {
+				print_line(vformat("false: = -2"));
+				print_line(vformat("\tthis: (idx: %s, pos: %s)", idx, idxthis[idx]));
+				print_line(vformat("\tthat: (idx: %s, pos: %s)", idx, idxthat[idx]));
+			}
 			break;
 		}
 		idx++;
